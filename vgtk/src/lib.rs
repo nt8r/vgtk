@@ -633,10 +633,15 @@ pub fn start<C: 'static + Component>() -> (Application, Scope<C>) {
         });
     });
 
-    app.connect_activate(move |_| {
+    let id_cell = std::rc::Rc::new(std::cell::RefCell::new(None));
+    let id_cell_clone = id_cell.clone();
+    id_cell.replace(Some(app.connect_activate(move |app| {
         debug!("{}", "Application has activated.".bright_blue());
         constructor(());
-    });
+        if let Some(id) = id_cell_clone.replace(None) {
+            glib::signal::signal_handler_disconnect(app, id);
+        }
+    })));
 
     (app, scope)
 }
